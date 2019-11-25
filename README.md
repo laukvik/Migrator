@@ -47,9 +47,16 @@ Destination destination = Destination.build()
     .database(db2);
 ````
 
-Begin copying
-Log 
+## Start
+
+Log every 10 lines of rows being copied
 ````
 Migrator migrator = new Migrator();
+/* Print */
+migrator.addListener(new MigratorListener() {
+    public void rowCopied(int rowIndex, String table) {
+        System.out.println("Copied row " + rowIndex + " from " + table);
+    }
+});
 migrator.copyTable(source, destination, 10);
 ````

@@ -1,5 +1,13 @@
 package no.laukvik.migrator;
 
 public enum DataType {
-    String, Date, Timestamp, Integer, Double
+    String,
+    Date, Time, Timestamp,
+    Integer, Double, BigDecimal, Long, Short, Float,
+    Boolean,
+    Byte,
+    Blob,
+    Clob,
+    Array,
+    SqlXml
 }

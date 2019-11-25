@@ -1,6 +1,9 @@
 package no.laukvik.migrator;
 
+import java.math.BigDecimal;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class Migrator {
@@ -14,7 +17,18 @@ public class Migrator {
     private int rowCounter;
     private int logEvery = 10;
 
+    private List<MigratorListener> listeners;
+
     public Migrator() {
+        listeners = new ArrayList<>();
+    }
+
+    public void addListener(MigratorListener listener){
+        this.listeners.add(listener);
+    }
+
+    public void removeListener(MigratorListener listener){
+        this.listeners.remove(listener);
     }
 
     public void copyTable(Source source, Destination destination, int logEvery) throws SQLException {
@@ -25,13 +39,16 @@ public class Migrator {
         this.logEvery = logEvery;
         LOG.info("Logging every " + logEvery + " row.");
         ResultSet rsFrom = getFromResultSet();
-        LOG.info("From table ok.");
+        LOG.info("Checking source table '" + source.getName() + "'... Ok.");
         ResultSet rsTo = getToResultSet();
-        LOG.info("Destination table ok.");
+        LOG.info("Checking destination table '" + destination.getName() + "' ... Ok.");
         rsTo.moveToInsertRow();
         LOG.info("Start copying " + max + " rows...");
         while (rsFrom.next()){
             copyRow(rsFrom, rsTo);
+            for (MigratorListener l : listeners){
+                l.rowCopied(rowCounter, source.getName());
+            }
         }
         LOG.info("Finished copying rows...");
     }
@@ -66,12 +83,104 @@ public class Migrator {
             switch (dt){
                 case String: copyString(rsFrom, rsTo, columnIndex); break;
                 case Date: copyDate(rsFrom, rsTo, columnIndex); break;
+                case Time: copyTime(rsFrom, rsTo, columnIndex); break;
                 case Timestamp: copyTimestamp(rsFrom, rsTo, columnIndex); break;
                 case Integer: copyInteger(rsFrom, rsTo, columnIndex); break;
                 case Double: copyDouble(rsFrom, rsTo, columnIndex); break;
+                case Float: copyFloat(rsFrom, rsTo, columnIndex); break;
+                case Long: copyLong(rsFrom, rsTo, columnIndex); break;
+                case Short: copyShort(rsFrom, rsTo, columnIndex); break;
+                case BigDecimal: copyBigDecimal(rsFrom, rsTo, columnIndex); break;
+                case Boolean: copyBoolean(rsFrom, rsTo, columnIndex); break;
+                case Byte: copyByte(rsFrom, rsTo, columnIndex); break;
+                case Blob: copyBlob(rsFrom, rsTo, columnIndex); break;
+                case Clob: copyClob(rsFrom, rsTo, columnIndex); break;
+                case Array: copyArray(rsFrom, rsTo, columnIndex); break;
+                case SqlXml: copySqlXml(rsFrom, rsTo, columnIndex); break;
             }
         }
         rsTo.insertRow();
+    }
+
+    void copySqlXml(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        Object v = from.getObject(columnIndex);
+        if (from.wasNull()) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateObject(columnIndex, v);
+        }
+    }
+
+    void copyArray(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        Array v = from.getArray(columnIndex);
+        if (from.wasNull()) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateArray(columnIndex, v);
+        }
+    }
+
+    void copyClob(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        Clob v = from.getClob(columnIndex);
+        if (from.wasNull()) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateClob(columnIndex, v);
+        }
+    }
+
+    void copyBlob(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        Blob v = from.getBlob(columnIndex);
+        if (from.wasNull()) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateBlob(columnIndex, v);
+        }
+    }
+
+    void copyByte(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        byte v = from.getByte(columnIndex);
+        if (from.wasNull()) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateByte(columnIndex, v);
+        }
+    }
+
+    void copyBoolean(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        boolean v = from.getBoolean(columnIndex);
+        if (from.wasNull()) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateBoolean(columnIndex, v);
+        }
+    }
+
+    void copyShort(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        short v = from.getShort(columnIndex);
+        if (from.wasNull()) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateShort(columnIndex, v);
+        }
+    }
+
+    void copyLong(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        long v = from.getLong(columnIndex);
+        if (from.wasNull()) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateLong(columnIndex, v);
+        }
+    }
+
+    void copyFloat(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        float v = from.getFloat(columnIndex);
+        if (from.wasNull()) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateFloat(columnIndex, v);
+        }
     }
 
     void copyDouble(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
@@ -91,6 +200,16 @@ public class Migrator {
             to.updateInt(columnIndex, v);
         }
     }
+
+    void copyBigDecimal(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        BigDecimal v = from.getBigDecimal(columnIndex);
+        if (from.wasNull()) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateBigDecimal(columnIndex, v);
+        }
+    }
+
 
     void copyString(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
         String v = from.getString(columnIndex);
@@ -116,6 +235,15 @@ public class Migrator {
             to.updateNull(columnIndex);
         } else {
             to.updateTimestamp(columnIndex, v);
+        }
+    }
+
+    void copyTime(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        Time v = from.getTime(columnIndex);
+        if (v == null) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateTime(columnIndex, v);
         }
     }
 
