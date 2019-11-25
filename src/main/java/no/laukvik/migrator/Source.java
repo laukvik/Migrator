@@ -3,30 +3,30 @@ package no.laukvik.migrator;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Table {
+public class Source {
     private String name;
     private List<DataType> columns;
     private Database database;
 
-    private Table() {
+    private Source() {
         columns = new ArrayList<>();
     }
 
-    public static Table build(){
-        return new Table();
+    public static Source build(){
+        return new Source();
     }
 
-    public Table name(String name) {
+    public Source name(String name) {
         this.name = name;
         return this;
     }
 
-    public Table database(Database database) {
+    public Source database(Database database) {
         this.database = database;
         return this;
     }
 
-    public Table column(DataType datatype) {
+    public Source column(DataType datatype) {
         this.columns.add(datatype);
         return this;
     }

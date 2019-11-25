@@ -7,8 +7,8 @@ public class Migrator {
 
     private Logger LOG = Logger.getLogger(Migrator.class.getName());
 
-    private Table from;
-    private Table to;
+    private Source source;
+    private Destination destination;
 
     private int max;
     private int rowCounter;
@@ -17,9 +17,9 @@ public class Migrator {
     public Migrator() {
     }
 
-    public void copyTable(Table from, Table to, int logEvery) throws SQLException {
-        this.from = from;
-        this.to = to;
+    public void copyTable(Source source, Destination destination, int logEvery) throws SQLException {
+        this.source = source;
+        this.destination = destination;
         this.max = 0;
         this.rowCounter = 0;
         this.logEvery = logEvery;
@@ -43,16 +43,16 @@ public class Migrator {
     }
 
     ResultSet getFromResultSet() throws SQLException {
-        Connection conn = from.getDatabase().getConnection();
+        Connection conn = source.getDatabase().getConnection();
         Statement stmt = conn.createStatement();
-        max = getRowCount(stmt, from.getName());
-        return stmt.executeQuery("SELECT * FROM " + from.getName());
+        max = getRowCount(stmt, source.getName());
+        return stmt.executeQuery("SELECT * FROM " + source.getName());
     }
 
     ResultSet getToResultSet() throws SQLException {
-        Connection conn = to.getDatabase().getConnection();
+        Connection conn = destination.getDatabase().getConnection();
         Statement st = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
-        return st.executeQuery("SELECT * FROM " + to.getName());
+        return st.executeQuery("SELECT * FROM " + destination.getName());
     }
 
     void copyRow(ResultSet rsFrom, ResultSet rsTo) throws SQLException {
@@ -61,7 +61,7 @@ public class Migrator {
         if (rowCounter % logEvery == 0){
             LOG.info("Copying row " + rowCounter + "/" + max);
         }
-        for (DataType dt : from.getColumns()){
+        for (DataType dt : source.getColumns()){
             columnIndex++;
             switch (dt){
                 case String: copyString(rsFrom, rsTo, columnIndex); break;

@@ -29,6 +29,7 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.2.8.jre6</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
