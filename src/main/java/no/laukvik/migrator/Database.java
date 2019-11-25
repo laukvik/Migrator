@@ -12,7 +12,11 @@ public class Database {
     private String password;
 
 
-    public Database(){
+    private Database(){
+    }
+
+    public static Database build(){
+        return new Database();
     }
 
     public Database url(String url){
@@ -34,14 +38,6 @@ public class Database {
     public Database password(String password){
         this.password = password;
         return this;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public String getDriver() {
-        return driver;
     }
 
     public Connection getConnection() throws SQLException {

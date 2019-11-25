@@ -8,8 +8,12 @@ public class Table {
     private List<DataType> columns;
     private Database database;
 
-    public Table() {
+    private Table() {
         columns = new ArrayList<>();
+    }
+
+    public static Table build(){
+        return new Table();
     }
 
     public Table name(String name) {
@@ -27,30 +31,16 @@ public class Table {
         return this;
     }
 
-    public Table columns(List<DataType> columns) {
-        this.columns = columns;
-        return this;
-    }
-
     public Database getDatabase() {
         return database;
     }
 
-
-
     public List<DataType> getColumns() {
         return columns;
-    }
-
-    public void setColumns(List<DataType> columns) {
-        this.columns = columns;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
 }

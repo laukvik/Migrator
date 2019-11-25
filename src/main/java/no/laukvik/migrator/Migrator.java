@@ -12,19 +12,28 @@ public class Migrator {
 
     private int max;
     private int rowCounter;
+    private int logEvery = 10;
 
     public Migrator() {
     }
 
-    public void copyTable(Table from, Table to) throws SQLException {
+    public void copyTable(Table from, Table to, int logEvery) throws SQLException {
         this.from = from;
         this.to = to;
+        this.max = 0;
+        this.rowCounter = 0;
+        this.logEvery = logEvery;
+        LOG.info("Logging every " + logEvery + " row.");
         ResultSet rsFrom = getFromResultSet();
+        LOG.info("From table ok.");
         ResultSet rsTo = getToResultSet();
+        LOG.info("Destination table ok.");
         rsTo.moveToInsertRow();
+        LOG.info("Start copying " + max + " rows...");
         while (rsFrom.next()){
             copyRow(rsFrom, rsTo);
         }
+        LOG.info("Finished copying rows...");
     }
 
     int getRowCount(Statement stmt, String table) throws SQLException {
@@ -49,16 +58,38 @@ public class Migrator {
     void copyRow(ResultSet rsFrom, ResultSet rsTo) throws SQLException {
         int columnIndex = 0;
         rowCounter++;
-        LOG.info("Copying row " + rowCounter + "/" + max);
+        if (rowCounter % logEvery == 0){
+            LOG.info("Copying row " + rowCounter + "/" + max);
+        }
         for (DataType dt : from.getColumns()){
             columnIndex++;
             switch (dt){
                 case String: copyString(rsFrom, rsTo, columnIndex); break;
                 case Date: copyDate(rsFrom, rsTo, columnIndex); break;
                 case Timestamp: copyTimestamp(rsFrom, rsTo, columnIndex); break;
+                case Integer: copyInteger(rsFrom, rsTo, columnIndex); break;
+                case Double: copyDouble(rsFrom, rsTo, columnIndex); break;
             }
         }
         rsTo.insertRow();
+    }
+
+    void copyDouble(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        double v = from.getDouble(columnIndex);
+        if (from.wasNull()) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateDouble(columnIndex, v);
+        }
+    }
+
+    void copyInteger(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
+        int v = from.getInt(columnIndex);
+        if (from.wasNull()) {
+            to.updateNull(columnIndex);
+        } else {
+            to.updateInt(columnIndex, v);
+        }
     }
 
     void copyString(ResultSet from, ResultSet to, int columnIndex) throws SQLException {
