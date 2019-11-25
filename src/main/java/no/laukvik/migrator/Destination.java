@@ -12,7 +12,7 @@ public class Destination {
         return new Destination();
     }
 
-    public Destination name(String name) {
+    public Destination table(String name) {
         this.name = name;
         return this;
     }

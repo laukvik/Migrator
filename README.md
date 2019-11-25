@@ -1,8 +1,17 @@
 # Readme
 
 Copies all rows from a source table to a destination table. Both source and 
-destination tables must exist before copying.
+destination tables must exist before copying. Since all copying is done through Java
+primitives, Migrator doesn't need to handle different databases individually. The
+following data types are supported:
 
+## Supported data types
+
+Migrator supports all data types in provided in the JDBC API.
+
+## Supported databases
+
+Migrator supports all databases with a JDBC driver
 
 ## Source
 Specify the connection details for the source
@@ -15,10 +24,10 @@ Database db = Database
     .password("helloworld");
 ````
 
-Specify table and its columns to be copied
+Specify table and its columns to be copied.
 ```java
 Source source = Source.build()
-    .name("inntektsmelding")
+    .table("cstmr")
     .column(DataType.String)
     .column(DataType.String)
     .column(DataType.String)
@@ -44,19 +53,30 @@ Database db2 = Database
 Specify destination target
 ```java
 Destination destination = Destination.build()
-    .name("inntektsmelding")
+    .table("customer")
     .database(db2);
 ````
 
-## Start
+## Copying the database table
 
-Log every 10 lines of rows being copied
 ```java
 Migrator migrator = new Migrator();
 migrator.addListener(new MigratorListener() {
+    public void starting(String table, int max) {
+        System.out.println("Starting copying " + max  + " rows from " + table);
+    }
+
     public void rowCopied(int rowIndex, String table) {
         System.out.println("Copied row " + rowIndex + " from " + table);
     }
+
+    public void finished(String table) {
+        System.out.println("Finished copying from " + table);
+    }
+
+    public void failed(String table, Exception e) {
+        System.out.println("Failed copying from " + table);
+    }
 });
-migrator.copyTable(source, destination, 10);
+migrator.copyTable(source, destination);
 ````

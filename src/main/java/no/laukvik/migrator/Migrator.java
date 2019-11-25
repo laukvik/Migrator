@@ -4,18 +4,14 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class Migrator {
-
-    private Logger LOG = Logger.getLogger(Migrator.class.getName());
 
     private Source source;
     private Destination destination;
 
     private int max;
     private int rowCounter;
-    private int logEvery = 10;
 
     private List<MigratorListener> listeners;
 
@@ -31,26 +27,61 @@ public class Migrator {
         this.listeners.remove(listener);
     }
 
-    public void copyTable(Source source, Destination destination, int logEvery) throws SQLException {
+    public void copyTable(Source source, Destination destination) throws MigrateException {
         this.source = source;
         this.destination = destination;
         this.max = 0;
         this.rowCounter = 0;
-        this.logEvery = logEvery;
-        LOG.info("Logging every " + logEvery + " row.");
-        ResultSet rsFrom = getFromResultSet();
-        LOG.info("Checking source table '" + source.getName() + "'... Ok.");
-        ResultSet rsTo = getToResultSet();
-        LOG.info("Checking destination table '" + destination.getName() + "' ... Ok.");
-        rsTo.moveToInsertRow();
-        LOG.info("Start copying " + max + " rows...");
-        while (rsFrom.next()){
-            copyRow(rsFrom, rsTo);
+        ResultSet rsFrom = null;
+        try {
+            rsFrom = getFromResultSet();
+        } catch (SQLException e) {
+            for (MigratorListener l : listeners){
+                l.failed(source.getName(), e);
+            }
+            throw new MigrateException(e);
+        }
+        ResultSet rsTo = null;
+        try {
+            rsTo = getToResultSet();
+        } catch (SQLException e) {
+            for (MigratorListener l : listeners){
+                l.failed(source.getName(), e);
+            }
+            throw new MigrateException(e);
+        }
+        try {
+            rsTo.moveToInsertRow();
+        } catch (SQLException e) {
+            for (MigratorListener l : listeners){
+                l.failed(source.getName(), e);
+            }
+            throw new MigrateException(e);
+        }
+        for (MigratorListener l : listeners){
+            l.starting(source.getName(), max);
+        }
+
+        try {
+            iterateRows(rsFrom, rsTo);
+        } catch (SQLException e) {
+            for (MigratorListener l : listeners){
+                l.failed(source.getName(), e);
+            }
+            throw new MigrateException(e);
+        }
+        for (MigratorListener l : listeners){
+            l.finished(source.getName());
+        }
+    }
+
+    void iterateRows(ResultSet sourceRs, ResultSet destinationRs) throws SQLException {
+        while (sourceRs.next()) {
+            copyRow(sourceRs, destinationRs);
             for (MigratorListener l : listeners){
                 l.rowCopied(rowCounter, source.getName());
             }
         }
-        LOG.info("Finished copying rows...");
     }
 
     int getRowCount(Statement stmt, String table) throws SQLException {
@@ -75,9 +106,6 @@ public class Migrator {
     void copyRow(ResultSet rsFrom, ResultSet rsTo) throws SQLException {
         int columnIndex = 0;
         rowCounter++;
-        if (rowCounter % logEvery == 0){
-            LOG.info("Copying row " + rowCounter + "/" + max);
-        }
         for (DataType dt : source.getColumns()){
             columnIndex++;
             switch (dt){

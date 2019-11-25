@@ -16,7 +16,7 @@ public class Source {
         return new Source();
     }
 
-    public Source name(String name) {
+    public Source table(String name) {
         this.name = name;
         return this;
     }
