@@ -59,6 +59,10 @@ Destination destination = Destination.build()
 
 ## Copying the database table
 
+Database can be very large and depending on the size you want to adjust
+the reporting to your needs. Just add a listener like below or don't use
+a listener at all.
+
 ```java
 Migrator migrator = new Migrator();
 migrator.addListener(new MigratorListener() {
