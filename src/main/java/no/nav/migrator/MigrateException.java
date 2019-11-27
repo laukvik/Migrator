@@ -1,4 +1,4 @@
-package no.laukvik.migrator;
+package no.nav.migrator;
 
 import java.sql.SQLException;
 

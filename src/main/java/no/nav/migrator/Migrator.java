@@ -1,4 +1,4 @@
-package no.laukvik.migrator;
+package no.nav.migrator;
 
 import java.math.BigDecimal;
 import java.sql.*;

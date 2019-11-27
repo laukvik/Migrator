@@ -1,4 +1,4 @@
-package no.laukvik.migrator;
+package no.nav.migrator;
 
 public enum DataType {
     String,

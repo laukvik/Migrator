@@ -1,4 +1,4 @@
-package no.laukvik.migrator;
+package no.nav.migrator;
 
 import java.util.ArrayList;
 import java.util.List;
