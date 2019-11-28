@@ -7,6 +7,9 @@ import java.util.List;
 
 public class Migrator {
 
+    private final static String SELECT_ALL_FROM = "SELECT * FROM ?";
+    private final static String SELECT_COUNT = "SELECT count(*) FROM ?";
+
     private Source source;
     private Destination destination;
 
@@ -79,28 +82,33 @@ public class Migrator {
         while (sourceRs.next()) {
             copyRow(sourceRs, destinationRs);
             for (MigratorListener l : listeners){
-                l.rowCopied(rowCounter, source.getName());
+                l.rowCopied(rowCounter, max, source.getName());
             }
         }
     }
 
-    int getRowCount(Statement stmt, String table) throws SQLException {
-        ResultSet rs = stmt.executeQuery("SELECT count(*) FROM " + table);
+    int getRowCount(Connection conn) throws SQLException {
+        PreparedStatement st2 = conn.prepareStatement(SELECT_COUNT);
+        st2.setString(1, source.getName());
+        ResultSet rs = st2.executeQuery();
         rs.next();
         return rs.getInt(1);
     }
 
     ResultSet getFromResultSet() throws SQLException {
         Connection conn = source.getDatabase().getConnection();
-        Statement stmt = conn.createStatement();
-        max = getRowCount(stmt, source.getName());
-        return stmt.executeQuery("SELECT * FROM " + source.getName());
+        max = getRowCount(conn);
+        PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_FROM, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+        stmt.setString(1, source.getName());
+        return stmt.executeQuery();
     }
 
     ResultSet getToResultSet() throws SQLException {
         Connection conn = destination.getDatabase().getConnection();
-        Statement st = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
-        return st.executeQuery("SELECT * FROM " + destination.getName());
+        conn.setAutoCommit(true);
+        PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_FROM, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+        stmt.setString(1, destination.getName());
+        return stmt.executeQuery();
     }
 
     void copyRow(ResultSet rsFrom, ResultSet rsTo) throws SQLException {

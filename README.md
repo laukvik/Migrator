@@ -1,5 +1,7 @@
 # Readme
 
+Warning! This is an experimental API.
+
 Copies all rows from a source table to a destination table. Both source and 
 destination tables must exist before copying. Since all copying is done through Java
 primitives, Migrator doesn't need to handle different databases individually. The

@@ -1,5 +1,6 @@
 package no.nav.migrator;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -10,13 +11,18 @@ public class Database {
     private String driver;
     private String user;
     private String password;
-
+    private DataSource dataSource;
 
     private Database(){
     }
 
     public static Database build(){
         return new Database();
+    }
+
+    public Database dataSource(DataSource dataSource){
+        this.dataSource = dataSource;
+        return this;
     }
 
     public Database url(String url){
@@ -41,10 +47,13 @@ public class Database {
     }
 
     public Connection getConnection() throws SQLException {
-        Properties props = new Properties();
-        props.setProperty("user", user);
-        props.setProperty("password", password);
-        return DriverManager.getConnection(url, props);
+        if (dataSource == null){
+            Properties props = new Properties();
+            props.setProperty("user", user);
+            props.setProperty("password", password);
+            return DriverManager.getConnection(url, props);
+        }
+        return dataSource.getConnection();
     }
 
 }
