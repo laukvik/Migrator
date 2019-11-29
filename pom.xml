@@ -4,12 +4,16 @@
 
     <groupId>no.nav</groupId>
     <artifactId>migrator</artifactId>
-    <version>0.2</version>
+    <version>0.2.2</version>
     <packaging>jar</packaging>
 
     <name>Migrator</name>
     <description>Copies database contents</description>
 
+    <scm>
+        <url>https://github.com/navikt/migrator</url>
+        <tag>master</tag>
+    </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -30,6 +34,11 @@
             <artifactId>postgresql</artifactId>
             <version>42.2.8.jre6</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.5.2</version>
         </dependency>
     </dependencies>
 

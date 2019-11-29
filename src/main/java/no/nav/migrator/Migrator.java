@@ -4,11 +4,11 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class Migrator {
 
-    private final static String SELECT_ALL_FROM = "SELECT * FROM ?";
-    private final static String SELECT_COUNT = "SELECT count(*) FROM ?";
+    private final Pattern WORDS_ONLY = Pattern.compile("\\w{1,200}");
 
     private Source source;
     private Destination destination;
@@ -30,11 +30,22 @@ public class Migrator {
         this.listeners.remove(listener);
     }
 
+    boolean validateTableName(String table){
+        if (!WORDS_ONLY.matcher(table).matches()){
+            throw new IllegalArgumentException("Table names can only be [a-z] and [0-9] without spaces.");
+        }
+        return true;
+    }
+
     public void copyTable(Source source, Destination destination) throws MigrateException {
         this.source = source;
         this.destination = destination;
         this.max = 0;
         this.rowCounter = 0;
+
+        validateTableName(source.getName());
+        validateTableName(destination.getName());
+
         ResultSet rsFrom = null;
         try {
             rsFrom = getFromResultSet();
@@ -87,28 +98,23 @@ public class Migrator {
         }
     }
 
-    int getRowCount(Connection conn) throws SQLException {
-        PreparedStatement st2 = conn.prepareStatement(SELECT_COUNT);
-        st2.setString(1, source.getName());
-        ResultSet rs = st2.executeQuery();
+    int getRowCount(Statement stmt, String table) throws SQLException {
+        ResultSet rs = stmt.executeQuery("SELECT count(*) FROM " + table);
         rs.next();
         return rs.getInt(1);
     }
 
     ResultSet getFromResultSet() throws SQLException {
         Connection conn = source.getDatabase().getConnection();
-        max = getRowCount(conn);
-        PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_FROM, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-        stmt.setString(1, source.getName());
-        return stmt.executeQuery();
+        Statement stmt = conn.createStatement();
+        max = getRowCount(stmt, source.getName());
+        return stmt.executeQuery("SELECT * FROM " + source.getName());
     }
 
     ResultSet getToResultSet() throws SQLException {
         Connection conn = destination.getDatabase().getConnection();
-        conn.setAutoCommit(true);
-        PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_FROM, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
-        stmt.setString(1, destination.getName());
-        return stmt.executeQuery();
+        Statement st = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+        return st.executeQuery("SELECT * FROM " + destination.getName());
     }
 
     void copyRow(ResultSet rsFrom, ResultSet rsTo) throws SQLException {
